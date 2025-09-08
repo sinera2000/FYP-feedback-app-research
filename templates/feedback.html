@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview Feedback Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* A slightly off-white background */
+        }
+        .report-card {
+            border-left-width: 4px;
+            transition: all 0.3s ease-in-out;
+        }
+        .report-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .feedback-section {
+            white-space: pre-wrap; /* Preserves line breaks from the backend */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-800">Interview Report</h1>
+            <p class="text-lg text-gray-600 mt-2">Prepared for {{ name }}</p>
+        </header>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 text-center mb-6">Final Score</h2>
+            <div class="flex items-center justify-center">
+                <div class="relative w-48 h-48">
+                    <svg class="w-full h-full" viewBox="0 0 100 100">
+                        <!-- Background circle -->
+                        <circle class="text-gray-200" stroke-width="10" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50" />
+                        <!-- Progress circle -->
+                        <circle id="progress-ring"
+                                class="text-indigo-600"
+                                stroke-width="10"
+                                stroke-linecap="round"
+                                stroke="currentColor"
+                                fill="transparent"
+                                r="45"
+                                cx="50"
+                                cy="50"
+                                style="transition: stroke-dashoffset 0.5s ease-in-out;" />
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-4xl font-bold text-gray-800">{{ "%.0f"|format(final_percentage) }}%</span>
+                        <span class="text-gray-500">{{ total_score }} / {{ max_score }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            {% for result in results %}
+            <div class="report-card bg-white rounded-lg shadow-md overflow-hidden 
+                {% if result.evaluation == 'correct' %} border-l-green-500 
+                {% elif result.evaluation == 'partially correct' %} border-l-yellow-500 
+                {% else %} border-l-red-500 {% endif %}">
+                
+                <div class="p-6">
+                    <p class="text-sm font-medium text-gray-500">Question {{ loop.index }}</p>
+                    <p class="text-lg font-semibold text-gray-800 mt-1">{{ result.question }}</p>
+                </div>
+
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <p class="text-sm font-medium text-gray-600">Your Answer:</p>
+                    <p class="mt-2 text-gray-700 italic">"{{ result.answer }}"</p>
+                </div>
+
+                <div class="p-6 border-t border-gray-200">
+                    <div class="flex items-center mb-4">
+                        <p class="text-sm font-medium text-gray-600 mr-2">Evaluation:</p>
+                        <span class="px-3 py-1 text-sm font-semibold rounded-full
+                            {% if result.evaluation == 'correct' %} bg-green-100 text-green-800
+                            {% elif result.evaluation == 'partially correct' %} bg-yellow-100 text-yellow-800
+                            {% else %} bg-red-100 text-red-800 {% endif %}">
+                            {{ result.evaluation|title }}
+                        </span>
+                    </div>
+
+                    {% if result.detailed_feedback %}
+                    <div class="mt-4 pt-4 border-t border-gray-200 feedback-section text-gray-800">
+                        {# --- FIX: This simplified and more direct replacement logic is more robust --- #}
+                        {% set f = result.detailed_feedback %}
+                        {% set f = f|replace('✅ **What you did well:**', '<p class="font-semibold text-green-700 mb-1">✅ What you did well:</p>') %}
+                        {% set f = f|replace('💡 **Specific Suggestions:**', '<p class="mt-4 font-semibold text-blue-700 mb-1">💡 Specific Suggestions:</p>') %}
+                        {% set f = f|replace('🧠 **Key Concepts to Review:**', '<p class="mt-4 font-semibold text-purple-700 mb-1">🧠 Key Concepts to Review:</p>') %}
+                        {% set f = f|replace('❌ **To improve:**', '<p class="mt-4 font-semibold text-red-700 mb-1">❌ To improve:</p>') %}
+                        {{ f|safe }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <footer class="text-center mt-10">
+            <a href="/" class="inline-block py-3 px-8 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-300">
+                Start a New Interview
+            </a>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const circle = document.getElementById('progress-ring');
+            const radius = circle.r.baseVal.value;
+            const circumference = 2 * Math.PI * radius;
+            
+            // --- FIX: Read the Jinja variable as a string and parse it ---
+            // This is valid JavaScript and prevents linter errors, while still working correctly at runtime.
+            const percentage = parseFloat("{{ final_percentage }}") || 0;
+
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            circle.style.strokeDashoffset = circumference;
+
+            const offset = circumference - (percentage / 100) * circumference;
+            
+            // Trigger the animation after a short delay
+            setTimeout(() => {
+                circle.style.strokeDashoffset = offset;
+            }, 100);
+        });
+    </script>
+</body>
+</html>

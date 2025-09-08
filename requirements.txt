@@ -1,0 +1,13 @@
+sentence-transformers
+shap
+pandas
+google-generativeai
+catboost
+scikit-learn
+nltk
+flask
+joblib
+python-dotenv
+PyPDF2
+pymongo[srv]
+groq
